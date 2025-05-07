@@ -1,0 +1,13 @@
+schema_version = "1.0.0"
+id = "mio3_curve_edges"
+name = "Mio3 Curve Edges"
+version = "0.9.0"
+tagline = "Use a spline curve to deform an edge loop"
+maintainer = "Mio"
+type = "add-on"
+tags = ["Mesh"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+website = "https://github.com/mio3io/mio3_curve_edge"
+copyright = ["2025 Mio"]
+

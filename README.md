@@ -6,6 +6,14 @@
 
 https://addon.mio3io.com/
 
+## 互換性
+
+Blender Ver 4.2 以降
+
+## 場所
+
+3D View >  SideBar > Mio3  
+
 
 ## Mio3 Curve Edges
 

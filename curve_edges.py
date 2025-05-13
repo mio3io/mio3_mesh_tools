@@ -19,7 +19,7 @@ from .curve_edges_utils import (
 
 
 class MESH_OT_mio3_curve_edges_base(Operator):
-    bl_label = "カーブエッジ"
+    bl_label = "Curve Edges"
     bl_options = {"REGISTER", "UNDO"}
 
     def update_points(self, context):
@@ -239,9 +239,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                 mirror_idx = self._point_mirror_map.get(s_idx, {}).get(p_idx)
                 if mirror_idx is not None:
                     mirror_l = Vector((-new_l.x, new_l.y, new_l.z))
-                    self._spline_datas[s_idx]["control_points"][mirror_idx] = (
-                        matrix_world @ mirror_l
-                    ).to_tuple()
+                    self._spline_datas[s_idx]["control_points"][mirror_idx] = (matrix_world @ mirror_l).to_tuple()
 
         for s_idx in updated_splines:
             sd = self._spline_datas[s_idx]
@@ -297,15 +295,9 @@ class MESH_OT_mio3_curve_edges_base(Operator):
             best, ins_idx = float("inf"), 0
             for j in range(len(cp_list)):
                 a = Vector(cp_list[j])
-                b = Vector(
-                    cp_list[(j + 1) % len(cp_list)] if closed_flag else cp_list[min(j + 1, len(cp_list) - 1)]
-                )
+                b = Vector(cp_list[(j + 1) % len(cp_list)] if closed_flag else cp_list[min(j + 1, len(cp_list) - 1)])
                 ab = b - a
-                t = (
-                    0
-                    if ab.length_squared == 0
-                    else max(0.0, min(1.0, (new_pt - a).dot(ab) / ab.length_squared))
-                )
+                t = 0 if ab.length_squared == 0 else max(0.0, min(1.0, (new_pt - a).dot(ab) / ab.length_squared))
                 dist = (new_pt - (a + ab * t)).length
                 if dist < best:
                     best, ins_idx = dist, j + 1
@@ -362,7 +354,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                         continue
                 if len(control_points) > 2 and 0 <= point_idx < len(control_points):
                     control_points.pop(point_idx)
-                    
+
         for spline in self._spline_datas:
             spline["spline_points"] = calc_spline_points(spline["control_points"], self._segments, spline["is_closed"])
 
@@ -507,7 +499,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         self.__class__.remove_handler()
         self.end_move_mode("finish_deform")
         redraw_3d_views(context)
-        self.report({"INFO"}, "確定しました")
+        self.report({"INFO"}, "Confirmed")
         context.workspace.status_text_set(None)
         return {"FINISHED"}
 
@@ -573,7 +565,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
         self._matrix_world = obj.matrix_world
 
-        context.workspace.status_text_set("🐻[クリック]確定 / 🍎[Ctrl+ホイール][Shift+ホイール]ポイント数変更 [Ctrl+クリック]追加or削除 [Del]選択を削除 /🎃[M]ミラー切り替え 🍇[R]変形リセット") # fmt: skip
+        context.workspace.status_text_set(bpy.app.translations.pgettext("🐻[Click] Confirm / 🍎[Ctrl+Wheel][Shift+Wheel] Change Control Points [Ctrl+Click] Add or delete [Del] Delete Control Points /🎃[M] Mirror toggle 🍇[R] Reset Deform", "WorkSpace")) # fmt: skip
 
         self._x_mirror = obj.data.use_mirror_x
         self.points = context.window_manager.mio3ce.control_num
@@ -681,9 +673,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
                 spline = self._spline_datas[self._active_spline_index]
                 active_pos = Vector(spline["control_points"][self._active_point_index])
-                active_2d = view3d_utils.location_3d_to_region_2d(
-                    context.region, context.region_data, active_pos
-                )
+                active_2d = view3d_utils.location_3d_to_region_2d(context.region, context.region_data, active_pos)
                 self._mouse_offset = (mouse_x - active_2d.x, mouse_y - active_2d.y) if active_2d else (0, 0)
                 self.store_points()
 
@@ -770,14 +760,14 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
 class MESH_OT_mio3_curve_edges(MESH_OT_mio3_curve_edges_base):
     bl_idname = "mesh.mio3_curve_edges"
-    bl_label = "カーブエッジ"
-    bl_description = "スプラインカーブでエッジループを変形します"
+    bl_label = "Curve Edges"
+    bl_description = "Deforms an edge loop with a spline curve"
 
 
 class MESH_OT_mio3_curve_edges_quick(MESH_OT_mio3_curve_edges_base):
     bl_idname = "mesh.mio3_curve_edges_quick"
-    bl_label = "カーブエッジ"
-    bl_description = "カーブオプションを省略して即時変形します"
+    bl_label = "Curve Edges"
+    bl_description = "Omit the curve option for instant transformation"
 
     iterations: IntProperty(name="Iterations", default=3, min=1, max=10)
 
@@ -806,7 +796,7 @@ class MIO3_PT_curve_edge_loop(Panel):
         col = layout.column(align=False)
         split = col.split(factor=0.7, align=True)
         split.operator("mesh.mio3_curve_edges")
-        split.operator("mesh.mio3_curve_edges_quick", text="即時")
+        split.operator("mesh.mio3_curve_edges_quick", text="Quickly")
         split = col.split(factor=0.5, align=True)
         split.label(text="Control Points", icon="HANDLE_ALIGNED")
         split.prop(context.window_manager.mio3ce, "control_num", text="")

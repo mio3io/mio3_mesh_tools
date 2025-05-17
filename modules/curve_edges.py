@@ -784,44 +784,18 @@ class MESH_OT_mio3_curve_edges_quick(MESH_OT_mio3_curve_edges_base):
         return {"FINISHED"}
 
 
-class MIO3_PT_curve_edge_loop(Panel):
-    bl_label = "Mio3 Curve Edges"
-    bl_idname = "MIO3_PT_curve_edge_loop"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Mio3"
-
-    def draw(self, context):
-        layout = self.layout
-        col = layout.column(align=False)
-        split = col.split(factor=0.7, align=True)
-        split.operator("mesh.mio3_curve_edges")
-        split.operator("mesh.mio3_curve_edges_quick", text="Quickly")
-        split = col.split(factor=0.5, align=True)
-        split.label(text="Control Points", icon="HANDLE_ALIGNED")
-        split.prop(context.window_manager.mio3ce, "control_num", text="")
-
-
-class MIO3_PG_curve_edge_loop(PropertyGroup):
-    control_num: IntProperty(name="Control Points", default=3, min=2, max=30)
-
-
 classes = [
     MESH_OT_mio3_curve_edges,
     MESH_OT_mio3_curve_edges_quick,
-    MIO3_PT_curve_edge_loop,
-    MIO3_PG_curve_edge_loop,
 ]
 
 
-def register(name):
+def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.WindowManager.mio3ce = PointerProperty(type=MIO3_PG_curve_edge_loop)
 
 
-def unregister(name):
+def unregister():
     MESH_OT_mio3_curve_edges.remove_handler()
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    del bpy.types.WindowManager.mio3ce

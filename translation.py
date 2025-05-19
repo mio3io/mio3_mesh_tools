@@ -52,6 +52,10 @@ translation_dict = {
 
         ("Operator", "Normal Symmetrize"): "ノーマルを対称化",
         ("Operator", "Equalize Edge Lengths"): "辺の長さを揃える",
+        ("Operator", "Origin → Active"): "原点 → アクティブ",
+        ("Operator", "Snap to Nearest Vertex"): "近接頂点にスナップ",
+        
+
     }
 }  # fmt: skip
 

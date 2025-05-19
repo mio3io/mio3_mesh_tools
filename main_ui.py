@@ -94,7 +94,9 @@ class MIO3_PT_mesh_utils(Panel):
         layout = self.layout
         col = layout.column(align=False)
         col.operator("mesh.mio3_normal_symmetrize")
+        col.operator("mesh.mio3_snap_distance")
         col.operator("mesh.mio3_edge_length")
+        col.operator("mesh.mio3_origin_to_selection")
 
 
 classes = [

@@ -28,8 +28,8 @@ class MIO3AS_OT_edge_length(Mio3MTOperator, Operator):
         default=0.01,
         min=0.0001,
         # max=10,
-        step=0.001,
-        # unit="LENGTH",
+        step=0.01,
+        unit="LENGTH",
     )
 
     smooth_factor: FloatProperty(

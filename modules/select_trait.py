@@ -198,6 +198,9 @@ class MESH_OT_mio3_select_mirror(Mio3MTOperator, Operator):
 
         selected_verts = {v for v in bm.verts if v.select}
 
+        if not self.extend:
+            deselect_all(bm)
+
         for v in selected_verts:
             mirror_co = v.co.copy()
             mirror_co.x = -mirror_co.x

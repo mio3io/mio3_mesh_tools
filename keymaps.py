@@ -10,7 +10,7 @@ def register():
     if kc:
         km = kc.keymaps.new(name="Mesh", space_type="EMPTY")
         kmi = km.keymap_items.new(
-            "mesh.mio3_select_edge_more",
+            "mesh.mio3_select_edges",
             "NUMPAD_PLUS",
             "PRESS",
             ctrl=True,
@@ -20,8 +20,18 @@ def register():
         addon_keymaps.append((km, kmi))
 
         kmi = km.keymap_items.new(
-            "mesh.mio3_select_edge_less",
+            "mesh.mio3_select_edges",
             "NUMPAD_MINUS",
+            "PRESS",
+            ctrl=True,
+            shift=False,
+            alt=True,
+        )
+        addon_keymaps.append((km, kmi))
+
+        kmi = km.keymap_items.new(
+            "mesh.mio3_select_between",
+            "NUMPAD_ASTERIX",
             "PRESS",
             ctrl=True,
             shift=False,

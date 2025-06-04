@@ -9,226 +9,150 @@ from mathutils import kdtree, Vector
 from bpy_extras import view3d_utils
 
 
-select_more_op = bpy.ops.mesh.select_more.get_rna_type()
-select_less_op = bpy.ops.mesh.select_less.get_rna_type()
+# select_more_op = bpy.ops.mesh.select_more.get_rna_type()
+# select_less_op = bpy.ops.mesh.select_less.get_rna_type()
 
 
-class MESH_OT_mio3_select_loop(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_loop"
-    bl_label = "Select Edge Loops"
-    bl_description = "Expand or reduce the selection of edge loops\n[Shift] Loop select\n[Alt] Reduce by one"
-    bl_options = {"REGISTER", "UNDO"}
+def mio3_select_edge_loop_more(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    selected_edges = {e for e in bm.edges if e.select}
 
-    mode: EnumProperty(
-        name="Mode",
-        items=[("EXPAND", "Expand", ""), ("MORE", "One More", ""), ("LESS", "One Less", "")],
-        options={"HIDDEN"},
-    )
-
-    def invoke(self, context, event):
-        self.mode = "EXPAND" if event.shift else "LESS" if event.alt else "MORE"
-        return self.execute(context)
-
-    def execute(self, context):
-        if self.mode == "EXPAND":
-            bpy.ops.mesh.loop_multi_select("EXEC_DEFAULT", ring=False)
-        elif self.mode == "MORE":
-            bpy.ops.mesh.mio3_select_edge_loop_more("EXEC_DEFAULT")
-        elif self.mode == "LESS":
-            bpy.ops.mesh.mio3_select_edge_loop_less("EXEC_DEFAULT")
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_ring(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_ring"
-    bl_label = "Select Edge Rings"
-    bl_description = "Expand or reduce the selection of edge rings\n[Shift] Ring select\n[Alt] Reduce by one"
-    bl_options = {"REGISTER", "UNDO"}
-
-    mode: EnumProperty(
-        name="Mode",
-        items=[("EXPAND", "Expand", ""), ("MORE", "One More", ""), ("LESS", "One Less", "")],
-        options={"HIDDEN"},
-    )
-
-    def invoke(self, context, event):
-        self.mode = "EXPAND" if event.shift else "LESS" if event.alt else "MORE"
-        return self.execute(context)
-
-    def execute(self, context):
-        if self.mode == "EXPAND":
-            bpy.ops.mesh.loop_multi_select("EXEC_DEFAULT", ring=True)
-        elif self.mode == "MORE":
-            bpy.ops.mesh.mio3_select_edge_ring_more("EXEC_DEFAULT")
-        elif self.mode == "LESS":
-            bpy.ops.mesh.mio3_select_edge_ring_less("EXEC_DEFAULT")
-
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_more(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_more"
-    bl_label = "Select Edge More"
-    bl_description = "Select more edges"
-    bl_options = {"REGISTER", "UNDO"}
-    ring: BoolProperty(name="Edge Rings", default=True)
-
-    def execute(self, context):
-        if self.ring:
-            bpy.ops.mesh.mio3_select_edge_ring_more("EXEC_DEFAULT")
-        else:
-            bpy.ops.mesh.mio3_select_edge_loop_more("EXEC_DEFAULT")
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_less(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_less"
-    bl_label = "Select Edge Less"
-    bl_description = "Select more edges"
-    bl_options = {"REGISTER", "UNDO"}
-    ring: BoolProperty(name="Edge Rings", default=True)
-
-    def execute(self, context):
-        if self.ring:
-            bpy.ops.mesh.mio3_select_edge_ring_less("EXEC_DEFAULT")
-        else:
-            bpy.ops.mesh.mio3_select_edge_loop_less("EXEC_DEFAULT")
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_loop_more(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_loop_more"
-    bl_label = "Select Edge More"
-    bl_description = "Expand the selected edge loops"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        obj = context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
-        selected_edges = {e for e in bm.edges if e.select}
-
-        new_selecte_dges = set()
-        for edge in selected_edges:
-            for vert in edge.verts:
-                connected_edges = [e for e in vert.link_edges if e != edge]
-                if len(connected_edges) != 3:
-                    continue
-                for e in connected_edges:
-                    if len(e.link_faces) == 2 and len(edge.link_faces) == 2:
-                        shared_faces = set(e.link_faces) & set(edge.link_faces)
-                        if not shared_faces and not e.select:
-                            new_selecte_dges.add(e)
-                            break
-
-        for new_edge in new_selecte_dges:
-            new_edge.select = True
-
-        bmesh.update_edit_mesh(obj.data)
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_ring_more(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_ring_more"
-    bl_label = "Select Edge More"
-    bl_description = "Extend one selected edge rings"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        obj = context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
-        selected_edges = {e for e in bm.edges if e.select}
-
-        new_selecte_dges = set()
-        for edge in selected_edges:
-            ring_edges = set()
-            for vert in edge.verts:
-                for face in vert.link_faces:
-                    if edge not in face.edges:
-                        continue
-                    opposite_edge = []
-                    for e in face.edges:
-                        if e == edge:
-                            continue
-                        verts_not_in_edge = e.verts[0] not in edge.verts and e.verts[1] not in edge.verts
-                        if verts_not_in_edge:
-                            opposite_edge.append(e)
-                    if opposite_edge:
-                        ring_edges.add(opposite_edge[0])
-
-            new_selecte_dges.update(ring_edges - selected_edges)
-
-        for new_edge in new_selecte_dges:
-            new_edge.select = True
-
-        bmesh.update_edit_mesh(obj.data)
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_loop_less(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_loop_less"
-    bl_label = "Select Edge Less"
-    bl_description = "Reduce the selected edge loops"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        obj = context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
-        selected_edges = {e for e in bm.edges if e.select}
-
-        deselect_edges = set()
-        for edge in selected_edges:
-            count_selected = sum(1 for v in edge.verts for e in v.link_edges if e.select)
-            if count_selected <= 3:
-                deselect_edges.add(edge)
-
-        for edge in deselect_edges:
-            edge.select = False
-
-        active_element = bm.select_history.active
-        if not (isinstance(active_element, bmesh.types.BMEdge) and active_element.select):
-            bm.select_history.clear()
-
-        bmesh.update_edit_mesh(obj.data)
-        return {"FINISHED"}
-
-
-class MESH_OT_mio3_select_edge_ring_less(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_select_edge_ring_less"
-    bl_label = "Select Edge Less"
-    bl_description = "Reduce the selected edge rings"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        obj = context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
-        selected_edges = {e for e in bm.edges if e.select}
-
-        deselect_edges = set()
-        for edge in selected_edges:
-            count_selected_ring = 0
-            for face in edge.link_faces:
-                for face_edge in face.edges:
-                    if face_edge.select and face_edge != edge:
-                        count_selected_ring += 1
+    new_selecte_dges = set()
+    for edge in selected_edges:
+        for vert in edge.verts:
+            connected_edges = [e for e in vert.link_edges if e != edge]
+            if len(connected_edges) != 3:
+                continue
+            for e in connected_edges:
+                if len(e.link_faces) == 2 and len(edge.link_faces) == 2:
+                    shared_faces = set(e.link_faces) & set(edge.link_faces)
+                    if not shared_faces and not e.select:
+                        new_selecte_dges.add(e)
                         break
-            if count_selected_ring <= 1:
-                deselect_edges.add(edge)
 
-        for edge in deselect_edges:
-            edge.select = False
+    for new_edge in new_selecte_dges:
+        new_edge.select = True
 
-        active_element = bm.select_history.active
-        if not (isinstance(active_element, bmesh.types.BMEdge) and active_element.select):
-            bm.select_history.clear()
+    bmesh.update_edit_mesh(obj.data)
 
-        bmesh.update_edit_mesh(obj.data)
+
+def mio3_select_edge_ring_more(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    selected_edges = {e for e in bm.edges if e.select}
+
+    new_selecte_dges = set()
+    for edge in selected_edges:
+        ring_edges = set()
+        for vert in edge.verts:
+            for face in vert.link_faces:
+                if edge not in face.edges:
+                    continue
+                opposite_edge = []
+                for e in face.edges:
+                    if e == edge:
+                        continue
+                    verts_not_in_edge = e.verts[0] not in edge.verts and e.verts[1] not in edge.verts
+                    if verts_not_in_edge:
+                        opposite_edge.append(e)
+                if opposite_edge:
+                    ring_edges.add(opposite_edge[0])
+
+        new_selecte_dges.update(ring_edges - selected_edges)
+
+    for new_edge in new_selecte_dges:
+        new_edge.select = True
+
+    bmesh.update_edit_mesh(obj.data)
+
+
+def mio3_select_edge_loop_less(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    selected_edges = {e for e in bm.edges if e.select}
+
+    deselect_edges = set()
+    for edge in selected_edges:
+        count_selected = sum(1 for v in edge.verts for e in v.link_edges if e.select)
+        if count_selected <= 3:
+            deselect_edges.add(edge)
+
+    for edge in deselect_edges:
+        edge.select = False
+
+    active_element = bm.select_history.active
+    if not (isinstance(active_element, bmesh.types.BMEdge) and active_element.select):
+        bm.select_history.clear()
+
+    bmesh.update_edit_mesh(obj.data)
+
+
+def mio3_select_edge_ring_less(obj):
+    bm = bmesh.from_edit_mesh(obj.data)
+    selected_edges = {e for e in bm.edges if e.select}
+
+    deselect_edges = set()
+    for edge in selected_edges:
+        count_selected_ring = 0
+        for face in edge.link_faces:
+            for face_edge in face.edges:
+                if face_edge.select and face_edge != edge:
+                    count_selected_ring += 1
+                    break
+        if count_selected_ring <= 1:
+            deselect_edges.add(edge)
+
+    for edge in deselect_edges:
+        edge.select = False
+
+    active_element = bm.select_history.active
+    if not (isinstance(active_element, bmesh.types.BMEdge) and active_element.select):
+        bm.select_history.clear()
+
+    bmesh.update_edit_mesh(obj.data)
+
+
+class MESH_OT_mio3_select_edges(Mio3MTOperator, Operator):
+    bl_idname = "mesh.mio3_select_edges"
+    bl_label = "Select Edge More/Less"
+    bl_description = "Expand or reduce the selection of edge loops(rings)\n[Shift] Select All\n[Alt] Reduce by one"
+    bl_options = {"REGISTER", "UNDO"}
+    ring: BoolProperty(name="Edge Rings", default=True)
+    mode: EnumProperty(
+        name="Mode",
+        items=[("MORE", "One More", ""), ("LESS", "One Less", ""), ("EXPAND", "Expand", "")],
+        options={"HIDDEN", "SKIP_SAVE"},
+    )
+    def invoke(self, context, event):
+        if event.type == "NUMPAD_PLUS":
+            self.mode = "MORE"
+        elif event.type == "NUMPAD_MINUS":
+            self.mode = "LESS"
+        else:
+            self.mode = "EXPAND" if event.shift else "LESS" if event.alt else "MORE"
+        return self.execute(context)
+
+    def execute(self, context):
+        obj = context.active_object
+        if self.ring:
+            if self.mode == "EXPAND":
+                bpy.ops.mesh.loop_multi_select("EXEC_DEFAULT", ring=True)
+            elif self.mode == "MORE":
+                mio3_select_edge_ring_more(obj)
+            elif self.mode == "LESS":
+                mio3_select_edge_ring_less(obj)
+        else:
+            if self.mode == "EXPAND":
+                bpy.ops.mesh.loop_multi_select("EXEC_DEFAULT", ring=False)
+            elif self.mode == "MORE":
+                mio3_select_edge_loop_more(obj)
+            elif self.mode == "LESS":
+                mio3_select_edge_loop_less(obj)
         return {"FINISHED"}
 
 
 class MESH_OT_mio3_select_between(Mio3MTOperator, Operator):
     bl_idname = "mesh.mio3_select_between"
-    bl_label = "Between Edge Loops"
-    bl_description = "Select edge loops between selected edge rings"
+    bl_label = "Between Edge Rings"
+    bl_description = "Select edge rings between selected edges"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -484,7 +408,6 @@ class MESH_OT_mio3_select_edge_vector(Mio3MTOperator, Operator):
         bmesh.update_edit_mesh(obj.data)
         self.print_time()
         return {"FINISHED"}
-    
 
 
 class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
@@ -560,14 +483,7 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
 
 
 classes = [
-    MESH_OT_mio3_select_edge_loop_more,
-    MESH_OT_mio3_select_edge_loop_less,
-    MESH_OT_mio3_select_edge_ring_more,
-    MESH_OT_mio3_select_edge_ring_less,
-    MESH_OT_mio3_select_loop,
-    MESH_OT_mio3_select_ring,
-    MESH_OT_mio3_select_edge_more,
-    MESH_OT_mio3_select_edge_less,
+    MESH_OT_mio3_select_edges,
     MESH_OT_mio3_select_between,
     MESH_OT_mio3_select_edge_filter,
     MESH_OT_mio3_select_edge_vector,

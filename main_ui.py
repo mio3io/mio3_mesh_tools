@@ -44,8 +44,8 @@ class MIO3_PT_mesh_select(Panel):
 
         col.separator(factor=0.5)
         row = col.row(align=True)
-        row.operator("mesh.mio3_select_loop", text="Edge Loops", icon_value=icons.edge_loops)
-        row.operator("mesh.mio3_select_ring", text="Edge Rings", icon_value=icons.edge_rings)
+        row.operator("mesh.mio3_select_edges", text="Edge Loops", icon_value=icons.edge_loops).ring = False
+        row.operator("mesh.mio3_select_edges", text="Edge Rings", icon_value=icons.edge_rings).ring = True
         col.operator("mesh.mio3_select_between", icon_value=icons.edge_between)
 
         col.separator(factor=0.5)

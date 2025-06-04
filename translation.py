@@ -2,6 +2,11 @@ import bpy
 
 translation_dict = {
     "ja_JP": {
+        ("Operator", "Loops"): "ループ",
+        ("Operator", "Rings"): "リング",
+        ("Operator", "Between Rings"): "間のリング",
+
+
         ("*", "Curve Edges"): "カーブエッジ",
         ("Operator", "Curve Edges"): "カーブエッジ",
         ("Operator", "Quickly"): "即時",
@@ -18,25 +23,16 @@ translation_dict = {
         ("*", "[Alt] Deselect"): "[Alt]選択解除",
         ("Operator", "Select the Mirrored Mesh"): "ミラー方向のメッシュを選択",
         ("*", "Select the Mirrored Mesh"): "ミラー方向のメッシュを選択",
-
-        ("Operator", "Expand the selected edge loops"): "辺ループの選択をひとつ拡大します",
-        ("Operator", "Reduce the selected edge loops"): "辺ループの選択をひとつ縮小します",
-        ("Operator", "Expand the selected edge rings"): "辺リングの選択をひとつ拡大します",
-        ("Operator", "Reduce the selected edge rings"): "辺リングの選択をひとつ縮小します",
-
-        ("Operator", "Expand or reduce the selection of edge loops\n[Shift] Loop select\n[Alt] Reduce by one"): "辺ループの選択を拡大縮小します\n[Shift]ループ選択\n[Alt]1つ縮小",
-        ("Operator", "Expand or reduce the selection of edge rings\n[Shift] Ring select\n[Alt] Reduce by one"): "辺リングの選択を拡大縮小します\n[Shift]リング選択\n[Alt]1つ縮小",
-
         ("*", "Edge Rings"): "辺リング",
         ("*", "Include Center"): "中心を含む",
 
-        ("Operator", "Select Edge More"): "エッジ選択を拡大",
-        ("Operator", "Select Edge Less"): "エッジ選択を縮小",
+        ("Operator", "Select Edge More/Less"): "エッジ選択を拡大/縮小",
+        ("*", "Expand or reduce the selection of edge loops(rings)\n[Shift] Select All\n[Alt] Reduce by one"): "辺の選択を拡大/縮小します\n[Shift]すべて選択\n[Alt]1つ縮小",
+
         ("*", "One More"): "1つ拡大",
         ("*", "One Less"): "1つ縮小",
-
-        ("Operator", "Between Edge Loops"): "間の辺ループ",
-        ("*", "Select edge loops between selected edge rings"): "選択された辺リングの間を選択します",
+        ("Operator", "Between Edge Rings"): "間の辺リング",
+        ("*", "Select edge rings between selected edges"): "選択された辺の間にある辺リングを選択します",
 
         ("Operator", ""): "方向で選択を解除",
         ("Operator", "Select Edges by Vector"): "ベクトルで辺を選択",

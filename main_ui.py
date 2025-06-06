@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel, Menu, PropertyGroup
-from bpy.props import IntProperty, PointerProperty
+from bpy.props import BoolProperty, IntProperty, PointerProperty
 from .icons import icons
 from .utils import is_local_obj
 
@@ -79,6 +79,7 @@ class MIO3_PT_curve_edge_loop(Panel):
 
 class MIO3_PG_curve_edge_loop(PropertyGroup):
     control_num: IntProperty(name="Control Points", default=3, min=2, max=30)
+    hide_spline: BoolProperty(name="Hide Cueve", default=False)
 
 
 class MIO3_PT_mesh_utils(Panel):

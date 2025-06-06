@@ -1,11 +1,13 @@
 import bpy
 import gpu
+import blf
 import bmesh
 from mathutils import Vector, kdtree
 from bpy.types import Operator, Panel, PropertyGroup, SpaceView3D
 from bpy.props import IntProperty, PointerProperty
 from gpu_extras.batch import batch_for_shader
 from bpy_extras import view3d_utils
+from bpy.app.translations import pgettext_iface as tt_iface
 from .curve_edges_utils import (
     find_edge_loops,
     order_vertices,
@@ -18,6 +20,18 @@ from .curve_edges_utils import (
 )
 
 
+text_lines = [
+    "🐻Tips",
+    "[Ctrl+Wheel][Shift+Wheel] Change Control Points",
+    "[Ctrl+Click] Add or delete [Del] Delete Control Points",
+    "[R] Reset Deform [M] Mirror toggle [H] Hide Spline",
+]
+
+
+def get_guide_lines(base_x=50, base_y=50, line_height=26):
+    return [(base_x, base_y + i * line_height, tt_iface(text)) for i, text in enumerate(reversed(text_lines))]
+
+
 class MESH_OT_mio3_curve_edges_base(Operator):
     bl_label = "Curve Edges"
     bl_options = {"REGISTER", "UNDO"}
@@ -25,7 +39,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
     def update_points(self, context):
         context.window_manager.mio3ce.control_num = self.points
 
-    points: IntProperty(name="Control Points", default=2, min=2, max=30, update=update_points)
+    points: IntProperty(name="Points", default=2, min=2, max=30, update=update_points, options={"HIDDEN"})
 
     _matrix_world = None
 
@@ -272,7 +286,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
     def add_control_point(self, context, mouse_pos):
         """制御点を追加する"""
         region, rv3d = context.region, context.region_data
-        spline_idx, segment_idx, segment_t = self.get_closest_spline(context, mouse_pos)
+        spline_idx, segment_idx, segment_t = self.get_closest_spline(context, mouse_pos, self._hit_radius)
         if spline_idx is None:
             return False
 
@@ -309,7 +323,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         # ミラー側
         if self._x_mirror and ins_idx_original is not None:
             mouse_mirror_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, p_mirror)
-            spline_idx_m, _, _ = self.get_closest_spline(context, mouse_mirror_2d, spline_idx)
+            spline_idx_m, _, _ = self.get_closest_spline(context, mouse_mirror_2d, self._hit_radius, spline_idx)
             if spline_idx_m == spline_idx:
                 insert(control_points, p_mirror, is_closed)
 
@@ -364,6 +378,12 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
         self.create_spline_mirror_map(self._spline_datas)
         self.update_vertices(context)
+
+    def toggle_display_spline(self, context):
+        """スプラインの表示/非表示を切り替える"""
+        props = context.window_manager.mio3ce
+        props.hide_spline = not props.hide_spline
+        redraw_3d_views(context)
 
     def reset_deform(self, context):
         """制御点を元の位置に戻す"""
@@ -439,7 +459,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
         redraw_3d_views(context)
 
-    def get_closest_spline(self, context, mouse_pos, seatch_spline_idx=None):
+    def get_closest_spline(self, context, mouse_pos, hit_radius, seatch_spline_idx=None):
         """マウス位置に最も近いスプラインを見つける"""
         region, rv3d = context.region, context.region_data
         search_point_vec = Vector(mouse_pos)
@@ -469,7 +489,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                     min_dist = dist
                     spline_idx, segment_idx, segment_t = s_idx, i, t
 
-        if spline_idx is None or min_dist >= self._hit_radius:
+        if spline_idx is None or min_dist >= hit_radius:
             return None, None, None
 
         return spline_idx, segment_idx, segment_t
@@ -500,17 +520,17 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         self.end_move_mode("finish_deform")
         redraw_3d_views(context)
         self.report({"INFO"}, "Confirmed")
-        context.workspace.status_text_set(None)
         return {"FINISHED"}
 
     def cancel_deform(self, context):
         self.__class__.remove_handler()
         redraw_3d_views(context)
-        context.workspace.status_text_set(None)
         return {"CANCELLED"}
 
     @staticmethod
-    def draw_3d(self, context):
+    def draw_3d(self, context, props):
+        if props.hide_spline:
+            return
         spline_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         points_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         for i, spline in enumerate(self._spline_datas):
@@ -545,7 +565,14 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         gpu.state.line_width_set(1.0)
 
     @staticmethod
-    def draw_2d(self, context):
+    def draw_2d(self, context, props):
+        font_id = 0
+        blf.size(font_id, 16)
+        blf.color(font_id, 1.0, 1.0, 1.0, 1.0)
+        for x, y, text in self._text_lines:
+            blf.position(font_id, x, y, 0)
+            blf.draw(font_id, text)
+
         if not self._is_rect_mode:
             return
 
@@ -565,18 +592,19 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
         self._matrix_world = obj.matrix_world
 
-        context.workspace.status_text_set(bpy.app.translations.pgettext("🐻[Click] Confirm / 🍎[Ctrl+Wheel][Shift+Wheel] Change Control Points [Ctrl+Click] Add or delete [Del] Delete Control Points /🎃[M] Mirror toggle 🍇[R] Reset Deform", "WorkSpace")) # fmt: skip
-
         self._x_mirror = obj.data.use_mirror_x
         self.points = context.window_manager.mio3ce.control_num
+        context.window_manager.mio3ce.hide_spline = False
+        self._text_lines = get_guide_lines()
 
         if not self.create_spline_loops(context):
             return self.cancel_deform(context)
 
         self.update_vertices(context)
 
-        cls._handle_3d = SpaceView3D.draw_handler_add(self.draw_3d, (self, context), "WINDOW", "POST_VIEW")
-        cls._handle_2d = SpaceView3D.draw_handler_add(self.draw_2d, (self, context), "WINDOW", "POST_PIXEL")
+        props = context.window_manager.mio3ce
+        cls._handle_3d = SpaceView3D.draw_handler_add(self.draw_3d, (self, context, props), "WINDOW", "POST_VIEW")
+        cls._handle_2d = SpaceView3D.draw_handler_add(self.draw_2d, (self, context, props), "WINDOW", "POST_PIXEL")
 
         context.window_manager.modal_handler_add(self)
         return {"RUNNING_MODAL"}
@@ -630,13 +658,14 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                         self._active_spline_index = spline_idx
                         self._active_point_index = point_idx
                         self._selected_points = [point_key]
-                    if self._is_rect_mode:
                         # 選択範囲がなければ確定
-                        if self._drag_start_mouse == (mouse_x, mouse_y):
-                            spline_idx, _, _ = self.get_closest_spline(context, (mouse_x, mouse_y))
+                        if self._is_rect_mode:
+                            hit_radius = 160  # 解除の範囲広め
+                            spline_idx, _, _ = self.get_closest_spline(context, (mouse_x, mouse_y), hit_radius)
                             # クリック場所にスプラインがない
                             if spline_idx is None:
                                 return self.finish_deform(context)
+                    if self._is_rect_mode:
                         self._is_rect_mode = False
                         self._drag_end_mouse = (mouse_x, mouse_y)
                         self.select_points_rect(context, event.shift)
@@ -727,6 +756,9 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
         elif event.type == "M" and event.value == "PRESS":
             self._x_mirror = not self._x_mirror
+
+        elif event.type == "H" and event.value == "PRESS":
+            self.toggle_display_spline(context)
 
         if event.type in PASS_THROUGH_KEY:
             return {"PASS_THROUGH"}

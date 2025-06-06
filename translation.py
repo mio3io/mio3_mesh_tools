@@ -6,7 +6,6 @@ translation_dict = {
         ("Operator", "Rings"): "リング",
         ("Operator", "Between Rings"): "間のリング",
 
-
         ("*", "Curve Edges"): "カーブエッジ",
         ("Operator", "Curve Edges"): "カーブエッジ",
         ("Operator", "Quickly"): "即時",
@@ -14,9 +13,6 @@ translation_dict = {
         ("*", "Omit the curve option for instant transformation"): "カーブオプションを省略して即時変形します",
         ("*", "Control Points"): "制御点",
         ("*", "Confirmed"): "確定しました",
-        ("WorkSpace",
-            "🐻[Click] Confirm / 🍎[Ctrl+Wheel][Shift+Wheel] Change Control Points [Ctrl+Click] Add or delete [Del] Delete Control Points /🎃[M] Mirror toggle 🍇[R] Reset Deform"):
-            "🐻[クリック]確定 / 🍎[Ctrl+ホイール][Shift+ホイール]ポイント数変更 [Ctrl+クリック]追加or削除 [Del]制御点を削除 /🎃[M]ミラー切り替え 🍇[R]変形リセット",
 
         ("Operator", "Select Mesh by Direction"): "方向でメッシュを選択",
         ("Operator", "Select the Mesh Center"): "中心のメッシュを選択",
@@ -50,7 +46,13 @@ translation_dict = {
         ("Operator", "Equalize Edge Lengths"): "辺の長さを揃える",
         ("Operator", "Origin → Active"): "原点 → アクティブ",
         ("Operator", "Snap to Nearest Vertex"): "近接頂点にスナップ",
-        
+
+        # GPU GUI
+        ("*", "🐻Tips"): "🐻Tips",
+        ("*", "[Click] Confirm"): "[Click] 確定",
+        ("*", "[R] Reset Deform [M] Mirror toggle [H] Hide Spline"): "[R] 変形リセット [M] ミラー切り替え [H] スプライン非表示",
+        ("*", "[Ctrl+Wheel][Shift+Wheel] Change Control Points"): "[Ctrl+ホイール][Shift+ホイール]ポイント数変更",
+        ("*", "[Ctrl+Click] Add or delete [Del] Delete Control Points"): "[Ctrl+クリック]追加or削除 [Del]制御点を削除",
 
     }
 }  # fmt: skip

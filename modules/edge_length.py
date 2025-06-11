@@ -12,18 +12,18 @@ class MIO3AS_OT_edge_length(Mio3MTOperator, Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     mode: EnumProperty(
-        name="Mode",
+        name="Type",
         items=[
             ("AVERAGE", "Average", ""),
-            ("LONGEST", "Longest", ""),
-            ("SHORTEST", "Shortest", ""),
+            ("LONGEST", "Max", ""),
+            ("SHORTEST", "Min", ""),
             ("CUSTOM", "Custom", ""),
         ],
         default="AVERAGE",
     )
 
     custom_length: FloatProperty(
-        name="Custom Length",
+        name="Length",
         description="Custom edge length",
         default=0.01,
         min=0.0001,
@@ -75,10 +75,11 @@ class MIO3AS_OT_edge_length(Mio3MTOperator, Operator):
         layout = self.layout
         layout.use_property_decorate = False
         layout.use_property_split = True
-        layout.prop(self, "mode")
-        if self.mode == "CUSTOM":
-            layout.prop(self, "custom_length")
-        elif self.mode == "SMOOTH":
+        layout.prop(self, "mode", expand=True)
+        row = layout.row()
+        row.prop(self, "custom_length")
+        row.enabled = self.mode == "CUSTOM"
+        if self.mode == "SMOOTH":
             layout.prop(self, "smooth_factor")
 
 

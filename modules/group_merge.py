@@ -24,7 +24,7 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator, Operator):
 
         bm = bmesh.from_edit_mesh(obj.data)
         bm.verts.ensure_lookup_table()
-        selected_verts = {v for v in bm.verts if v.select}
+        selected_verts = [v for v in bm.verts if v.select]
         target_verts = get_connected_vert_group(selected_verts)
         ordered_verts, is_closed = self.get_ordered_verts(target_verts, self.marge_size)
         if not ordered_verts:
@@ -119,7 +119,7 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator, Operator):
 
         if len(ordered_verts) < size:
             return None
-        return ordered_verts, bool(end_points)
+        return ordered_verts, not bool(end_points)
 
 
 def register():

@@ -43,6 +43,7 @@ translation_dict = {
         ("*", "Select Bone"): "選択のボーン",
 
         ("Operator", "Normal Symmetrize"): "ノーマルを対称化",
+        ("Operator", "Merge Vertices by Group"): "指定数ごとに頂点を束ねる",
         ("Operator", "Equalize Edge Lengths"): "辺の長さを揃える",
         ("Operator", "Origin → Active"): "原点 → アクティブ",
         ("Operator", "Snap to Nearest Vertex"): "近接頂点にスナップ",

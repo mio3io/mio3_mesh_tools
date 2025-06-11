@@ -43,10 +43,11 @@ class MIO3_PT_mesh_select(Panel):
         row.operator("mesh.mio3_select_mirror", text="Mirror", icon_value=icons.mirror)
 
         col.separator(factor=0.5)
+        col.operator("mesh.mio3_select_between", icon_value=icons.edge_between)
+
         row = col.row(align=True)
         row.operator("mesh.mio3_select_edges", text="Edge Loops", icon_value=icons.edge_loops).ring = False
         row.operator("mesh.mio3_select_edges", text="Edge Rings", icon_value=icons.edge_rings).ring = True
-        col.operator("mesh.mio3_select_between", icon_value=icons.edge_between)
 
         col.separator(factor=0.5)
         split = col.split(factor=0.5, align=True)
@@ -93,18 +94,20 @@ class MIO3_PT_mesh_utils(Panel):
 
     def draw(self, context):
         layout = self.layout
-        col = layout.column(align=False)
-        col.operator("mesh.mio3_normal_symmetrize")
-        col.operator("mesh.mio3_snap_distance")
+        col = layout.column(align=True)
+        col.operator("mesh.mio3_group_merg")
         col.operator("mesh.mio3_edge_length")
+        col.separator(factor=0.5)
         col.operator("mesh.mio3_origin_to_selection")
+        col.separator(factor=0.5)
+        col.operator("mesh.mio3_normal_symmetrize")
 
 
 classes = [
+    MIO3_PG_curve_edge_loop,
     MIO3_PT_mesh_tools,
     MIO3_PT_mesh_select,
     MIO3_PT_curve_edge_loop,
-    MIO3_PG_curve_edge_loop,
     MIO3_PT_mesh_utils,
 ]
 

@@ -77,6 +77,46 @@ def find_x_mirror_verts(bm, selected_verts):
     return mirror_verts
 
 
+def get_connected_vert_groups(selected_verts):
+    groups = []
+    unvisited = set(selected_verts)
+    while unvisited:
+        v0 = unvisited.pop()
+        group = {v0}
+        stack = [v0]
+        while stack:
+            v = stack.pop()
+            for e in v.link_edges:
+                if not e.select:
+                    continue
+                ov = e.other_vert(v)
+                if ov in unvisited:
+                    unvisited.remove(ov)
+                    group.add(ov)
+                    stack.append(ov)
+        groups.append(list(group))
+    return groups
+
+
+def get_connected_vert_group(selected_verts):
+    unvisited = set(selected_verts)
+    while unvisited:
+        v0 = unvisited.pop()
+        group = {v0}
+        stack = [v0]
+        while stack:
+            v = stack.pop()
+            for e in v.link_edges:
+                if not e.select:
+                    continue
+                ov = e.other_vert(v)
+                if ov in unvisited:
+                    unvisited.remove(ov)
+                    group.add(ov)
+                    stack.append(ov)
+        return group
+
+
 def get_bone_by_weight(obj, armature, selected_verts):
     max_weight = 0
     result_bone = None

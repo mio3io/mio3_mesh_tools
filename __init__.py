@@ -3,8 +3,8 @@ from .modules import normal_symmetrize
 from .modules import select_edge_loop
 from .modules import select_trait
 from .modules import edge_length
-from .modules import snap_distance
 from .modules import origin
+from .modules import group_merge
 
 from . import main_ui
 from . import translation
@@ -18,7 +18,7 @@ module_list = [
     curve_edges,
     normal_symmetrize,
     edge_length,
-    snap_distance,
+    group_merge,
     origin,
     icons,
     main_ui,

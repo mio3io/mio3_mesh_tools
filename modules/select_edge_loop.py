@@ -121,6 +121,7 @@ class MESH_OT_mio3_select_edges(Mio3MTOperator, Operator):
         items=[("MORE", "One More", ""), ("LESS", "One Less", ""), ("EXPAND", "Expand", "")],
         options={"HIDDEN", "SKIP_SAVE"},
     )
+
     def invoke(self, context, event):
         if event.type == "NUMPAD_PLUS":
             self.mode = "MORE"
@@ -167,7 +168,6 @@ class MESH_OT_mio3_select_between(Mio3MTOperator, Operator):
         selected_edges = {e for e in bm.edges if e.select}
         edge_loops = self.find_connected_edges(selected_edges)
         if len(edge_loops) < 2:
-            self.report({"WARNING"}, "少なくとも2つの辺を選択してください")
             return {"CANCELLED"}
 
         self.select_between_loops(edge_loops)
@@ -416,13 +416,15 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
     bl_description = "Select edges from the selection based on view direction"
     bl_options = {"REGISTER", "UNDO"}
 
-    axis: EnumProperty(name="Axis", items=(("X", "Horizontal", ""), ("Y", "Vertical", "")))
-
-    def invoke(self, context, event):
-        view_rot = context.space_data.region_3d.view_rotation
-        view_matrix = view_rot.to_matrix()
-        self._view_matrix = view_matrix.transposed()
-        return self.execute(context)
+    axis: EnumProperty(
+        name="Axis",
+        items=(
+            ("X", "Horizontal", ""),
+            ("Y", "Vertical", ""),
+        ),
+        options={"HIDDEN"},
+    )
+    invert: BoolProperty(name="Invert", default=False)
 
     def execute(self, context):
         obj = context.active_object
@@ -433,10 +435,11 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
 
         region = context.region
         rv3d = context.space_data.region_3d
+        matrix_world = obj.matrix_world
 
         view_forward = rv3d.view_rotation @ Vector((0, 0, -1))
 
-        selected_edges = [e for e in bm.edges if e.select]
+        selected_edges = {e for e in bm.edges if e.select}
         deselect_all(bm)
 
         for edge in selected_edges:
@@ -448,8 +451,8 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
             edge_vector = v2_co - v1_co
             edge_vector.normalize()
 
-            v1_world = obj.matrix_world @ v1_co
-            v2_world = obj.matrix_world @ v2_co
+            v1_world = matrix_world @ v1_co
+            v2_world = matrix_world @ v2_co
 
             edge_vector_world = (v2_world - v1_world).normalized()
 
@@ -457,6 +460,8 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
 
             v1_screen = view3d_utils.location_3d_to_region_2d(region, rv3d, v1_world)
             v2_screen = view3d_utils.location_3d_to_region_2d(region, rv3d, v2_world)
+
+            selected = False
 
             if v1_screen is not None and v2_screen is not None:
                 edge_vector_2d = v2_screen - v1_screen
@@ -469,14 +474,19 @@ class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
                     y_abs = abs(edge_vector_2d.y)
 
                     if depth_component > 0.7:
-                        edge.select = True
+                        selected = True
                     else:
                         if self.axis == "X" and x_abs >= y_abs:
-                            edge.select = True
+                            selected = True
                         elif self.axis == "Y" and y_abs > x_abs:
-                            edge.select = True
+                            selected = True
                 else:
-                    edge.select = True
+                    selected = True
+
+            if self.invert:
+                edge.select = not selected
+            else:
+                edge.select = selected
 
         bmesh.update_edit_mesh(obj.data)
         return {"FINISHED"}

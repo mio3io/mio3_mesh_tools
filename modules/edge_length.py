@@ -1,7 +1,8 @@
 import bpy
 import bmesh
+from mathutils import Vector
 from bpy.props import EnumProperty, FloatProperty
-from ..utils import Mio3MTOperator
+from ..utils import Mio3MTOperator, find_x_mirror_vert_pairs
 
 
 class MIO3AS_OT_edge_length(Mio3MTOperator):
@@ -40,12 +41,17 @@ class MIO3AS_OT_edge_length(Mio3MTOperator):
     )
 
     def execute(self, context):
+        self.start_time()
         obj = context.active_object
 
         bm = bmesh.from_edit_mesh(obj.data)
         bm.edges.ensure_lookup_table()
+        bm.verts.ensure_lookup_table()
 
         selected_edges = {e for e in bm.edges if e.select}
+        if obj.data.use_mirror_x:
+            selected_verts = {v for e in selected_edges for v in e.verts}
+            mirror_vert_pairs = find_x_mirror_vert_pairs(bm, selected_verts)
 
         if not selected_edges:
             self.report({"WARNING"}, "No edges selected")
@@ -62,12 +68,22 @@ class MIO3AS_OT_edge_length(Mio3MTOperator):
 
         for edge in selected_edges:
             v1, v2 = edge.verts
-            direction = (v2.co - v1.co).normalized()
             mid_point = (v1.co + v2.co) / 2
+            direction = (v2.co - v1.co).normalized()
             v1.co = mid_point - direction * (target_length / 2)
             v2.co = mid_point + direction * (target_length / 2)
 
+            if obj.data.use_mirror_x:
+                mirror_v1 = mirror_vert_pairs.get(v1)
+                mirror_v2 = mirror_vert_pairs.get(v2)
+                if mirror_v1 and mirror_v2:
+                    mirror_mid_point = (mirror_v1.co + mirror_v2.co) / 2
+                    mirror_direction = (mirror_v2.co - mirror_v1.co).normalized()
+                    mirror_v1.co = mirror_mid_point - mirror_direction * (target_length / 2)
+                    mirror_v2.co = mirror_mid_point + mirror_direction * (target_length / 2)
+
         bmesh.update_edit_mesh(obj.data)
+        self.print_time()
         return {"FINISHED"}
 
     def draw(self, context):

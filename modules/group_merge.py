@@ -1,8 +1,8 @@
 import bpy
 import bmesh
-from mathutils import Vector
+from mathutils import Vector, kdtree
 from bpy.props import IntProperty, BoolProperty
-from ..utils import Mio3MTOperator, get_connected_vert_group
+from ..utils import Mio3MTOperator, find_x_mirror_vert_pairs, get_connected_vert_groups
 
 
 class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
@@ -12,7 +12,7 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
     bl_options = {"REGISTER", "UNDO"}
 
     marge_size: IntProperty(name="Size", default=2, min=2, max=10)
-    offset: IntProperty(name="Offset", default=0, min=0, max=10)
+    offset: IntProperty(name="Offset", default=0, min=-10, max=10)
     limit: BoolProperty(name="Limit Size", default=True)
 
     def execute(self, context):
@@ -23,42 +23,70 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
         bm = bmesh.from_edit_mesh(obj.data)
         bm.verts.ensure_lookup_table()
         selected_verts = [v for v in bm.verts if v.select]
-        target_verts = get_connected_vert_group(selected_verts)
-        ordered_verts, is_closed = self.get_ordered_verts(target_verts, self.marge_size)
-        if not ordered_verts:
-            return {"CANCELLED"}
 
-        if is_closed:
-            offset = self.offset % len(ordered_verts)
-            ordered_verts = ordered_verts[offset:] + ordered_verts[:offset]
-            limit = self.limit
+        use_mirror_x = obj.data.use_mirror_x
+        marge_size = min(self.marge_size, len(selected_verts))
+        offset = self.offset
+
+        target_vert_groups = get_connected_vert_groups(selected_verts)
+        if use_mirror_x:
+            mirror_vert_pairs = find_x_mirror_vert_pairs(bm, selected_verts)
         else:
-            offset = 0
-            limit = True
+            mirror_vert_pairs = {}
 
-        groups = self.split_groups(ordered_verts, self.marge_size, limit)
-        merge_cos = [self.get_merge_cos(group) for group in groups]
-
-        for group, merge_co in zip(groups, merge_cos):
-            valid_group = [v for v in group if v.is_valid]
-            if len(valid_group) < 2:
+        units = []
+        for unit_verts in target_vert_groups:
+            ordered_verts, is_closed = self.get_ordered_verts(unit_verts, marge_size)
+            if not ordered_verts:
                 continue
-            bmesh.ops.pointmerge(bm, verts=valid_group, merge_co=merge_co)
+
+            if is_closed:
+                ordered_verts = ordered_verts[offset:] + ordered_verts[:offset]
+                limit = self.limit
+            else:
+                offset = 0
+                limit = True
+
+            groups = self.split_groups(ordered_verts, marge_size, limit)
+            merge_cos = [self.get_merge_cos(group) for group in groups]
+
+            units.append((groups, merge_cos))
+
+        for groups, merge_cos in units:
+            for group, merge_co in zip(groups, merge_cos):
+                valid_group = [v for v in group if v.is_valid]
+                if len(valid_group) < 2:
+                    continue
+
+                if use_mirror_x:
+                    mirror_group = [mirror_vert_pairs.get(v) for v in valid_group if v in mirror_vert_pairs]
+                    bmesh.ops.pointmerge(bm, verts=valid_group, merge_co=merge_co)
+                    mirror_merge_co = Vector((-merge_co.x, merge_co.y, merge_co.z))
+                    if mirror_group:
+                        bmesh.ops.pointmerge(bm, verts=mirror_group, merge_co=mirror_merge_co)
+                else:
+                    bmesh.ops.pointmerge(bm, verts=valid_group, merge_co=merge_co)
 
         bmesh.update_edit_mesh(obj.data)
         return {"FINISHED"}
 
     @staticmethod
-    def get_merge_cos(group):
-        n = len(group)
-        if n % 2 == 1:
-            center_idx = n // 2
-            return group[center_idx].co
+    def get_merge_cos(verts):
+        count = len(verts)
+        if count == 0:
+            return None
+        if count % 2 == 1:
+            center_index = count // 2
+            return verts[center_index].co.copy()
         else:
-            return sum((v.co for v in group), Vector()) / n
+            idx1 = count // 2 - 1
+            idx2 = count // 2
+            co1 = verts[idx1].co
+            co2 = verts[idx2].co
+            return (co1 + co2) / 2
 
     @staticmethod
-    def split_groups(target_verts, marge_size, limit=True):
+    def split_groups(target_verts, marge_size, limit):
         v_len = len(target_verts)
         if not limit:
             extended_verts = target_verts + target_verts[: marge_size - 1]
@@ -88,7 +116,7 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
     @staticmethod
     def get_ordered_verts(target_verts, size):
         if len(target_verts) < 2 or len(target_verts) < size:
-            return None
+            return None, None
 
         end_points = [
             v for v in target_verts if sum(ov in target_verts for e in v.link_edges for ov in [e.other_vert(v)]) == 1
@@ -115,8 +143,6 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
             visited.add(next_v)
             cur_v = next_v
 
-        if len(ordered_verts) < size:
-            return None
         return ordered_verts, not bool(end_points)
 
 

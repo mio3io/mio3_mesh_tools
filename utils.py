@@ -85,6 +85,25 @@ def find_x_mirror_verts(bm, selected_verts):
     return mirror_verts
 
 
+def find_x_mirror_vert_pairs(bm, selected_verts):
+    kd = kdtree.KDTree(len(bm.verts))
+    for i, v in enumerate(bm.verts):
+        kd.insert(v.co, i)
+    kd.balance()
+
+    mirror_verts = {}
+    for v in selected_verts:
+        mirror_co = v.co.copy()
+        mirror_co.x = -mirror_co.x
+        _, index, dist = kd.find(mirror_co)
+        if dist < 0.0001:
+            mirror_vert = bm.verts[index]
+            if mirror_vert not in selected_verts:
+                mirror_verts[v] = mirror_vert
+
+    return mirror_verts
+
+
 def get_connected_vert_groups(selected_verts):
     groups = []
     unvisited = set(selected_verts)
@@ -104,25 +123,6 @@ def get_connected_vert_groups(selected_verts):
                     stack.append(ov)
         groups.append(list(group))
     return groups
-
-
-def get_connected_vert_group(selected_verts):
-    unvisited = set(selected_verts)
-    while unvisited:
-        v0 = unvisited.pop()
-        group = {v0}
-        stack = [v0]
-        while stack:
-            v = stack.pop()
-            for e in v.link_edges:
-                if not e.select:
-                    continue
-                ov = e.other_vert(v)
-                if ov in unvisited:
-                    unvisited.remove(ov)
-                    group.add(ov)
-                    stack.append(ov)
-        return group
 
 
 def get_bone_by_weight(obj, armature, selected_verts):

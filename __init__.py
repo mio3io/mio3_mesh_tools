@@ -10,9 +10,11 @@ from . import main_ui
 from . import translation
 from . import icons
 from . import keymaps
+from . import preferences
 
 
 module_list = [
+    preferences,
     select_edge_loop,
     select_trait,
     curve_edges,
@@ -25,7 +27,6 @@ module_list = [
     keymaps,
     translation,
 ]
-
 
 def register():
     for module in module_list:

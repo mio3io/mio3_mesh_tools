@@ -3,8 +3,8 @@ import gpu
 import blf
 import bmesh
 from mathutils import Vector, kdtree
-from bpy.types import Operator, Panel, PropertyGroup, SpaceView3D
-from bpy.props import IntProperty, PointerProperty
+from bpy.types import Operator, SpaceView3D
+from bpy.props import IntProperty
 from gpu_extras.batch import batch_for_shader
 from bpy_extras import view3d_utils
 from bpy.app.translations import pgettext_iface as tt_iface
@@ -18,6 +18,7 @@ from .curve_edges_utils import (
     redraw_3d_views,
     PASS_THROUGH_KEY,
 )
+from ..globals import get_preferences
 
 
 text_lines = [
@@ -69,8 +70,8 @@ class MESH_OT_mio3_curve_edges_base(Operator):
     _col_point_default = (0.36, 0.79, 1.00, 1.0)
     _col_point_selected = (0.8, 0.8, 0.8, 1.0)
     _col_point_active = (0.8, 0.8, 0.8, 1.0)
-    _col_spline = (0.0, 0.7, 1.0, 1.0)  # デフォルトのスプライン
-    _col_active_spline = (0.0, 0.7, 1.0, 1.0)  # アクティブなスプライン
+    _col_spline_default = (0.0, 0.7, 1.0, 1.0)  # デフォルトのスプライン
+    _col_spline_active = (0.0, 0.7, 1.0, 1.0)  # アクティブなスプライン
 
     _handle_3d = None
     _handle_2d = None
@@ -536,7 +537,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         for i, spline in enumerate(self._spline_datas):
             is_active_spline = i == self._active_spline_index
             # スプラインの描画
-            spline_color = self._col_active_spline if is_active_spline else self._col_spline
+            spline_color = self._col_spline_active if is_active_spline else self._col_spline_default
             if spline["is_closed"]:
                 batch = batch_for_shader(spline_shader, "LINE_LOOP", {"pos": spline["spline_points"]})
             else:
@@ -587,8 +588,15 @@ class MESH_OT_mio3_curve_edges_base(Operator):
 
     def invoke(self, context, event):
         cls = self.__class__
+        pref = get_preferences()
         cls.remove_handler()
         obj = context.active_object
+
+        self._col_point_active = pref.col_point_active
+        self._col_point_selected = pref.col_point_selected
+        self._col_point_default = pref.col_point_default
+        self._col_spline_active = pref.col_spline_active
+        self._col_spline_default = pref.col_spline_default
 
         self._matrix_world = obj.matrix_world
 

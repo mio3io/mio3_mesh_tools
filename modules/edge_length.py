@@ -1,11 +1,10 @@
 import bpy
 import bmesh
-from bpy.types import Operator
 from bpy.props import EnumProperty, FloatProperty
 from ..utils import Mio3MTOperator
 
 
-class MIO3AS_OT_edge_length(Mio3MTOperator, Operator):
+class MIO3AS_OT_edge_length(Mio3MTOperator):
     bl_idname = "mesh.mio3_edge_length"
     bl_label = "Equalize Edge Lengths"
     bl_description = "Equalize Edge Lengths"

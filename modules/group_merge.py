@@ -1,16 +1,14 @@
 import bpy
 import bmesh
 from mathutils import Vector
-from bpy.types import Operator
 from bpy.props import IntProperty, BoolProperty
-from ..utils import get_connected_vert_group, get_connected_vert_groups
-from ..utils import Mio3MTOperator
+from ..utils import Mio3MTOperator, get_connected_vert_group
 
 
-class OBJECT_OT_mio3_group_merge(Mio3MTOperator, Operator):
+class OBJECT_OT_mio3_group_merge(Mio3MTOperator):
     bl_idname = "mesh.mio3_group_merg"
     bl_label = "Merge Vertices by Group"
-    bl_description = "選択した頂点を指定したサイズのグループに分けてマージします"
+    bl_description = "Merge selected vertices into groups of a specified size"
     bl_options = {"REGISTER", "UNDO"}
 
     marge_size: IntProperty(name="Size", default=2, min=2, max=10)
@@ -60,29 +58,29 @@ class OBJECT_OT_mio3_group_merge(Mio3MTOperator, Operator):
             return sum((v.co for v in group), Vector()) / n
 
     @staticmethod
-    def split_groups(target_verts, group_size, shrink_end_groups=True):
-        n = len(target_verts)
-        if not shrink_end_groups:
-            extended_verts = target_verts + target_verts[: group_size - 1]
-            return [extended_verts[i : i + group_size] for i in range(n)]
+    def split_groups(target_verts, marge_size, limit=True):
+        v_len = len(target_verts)
+        if not limit:
+            extended_verts = target_verts + target_verts[: marge_size - 1]
+            return [extended_verts[i : i + marge_size] for i in range(v_len)]
 
-        num_full = n // group_size
-        remainder = n % group_size
+        num_full = v_len // marge_size
+        remainder = v_len % marge_size
         if remainder == 0:
-            return [target_verts[i * group_size : (i + 1) * group_size] for i in range(num_full)]
+            return [target_verts[i * marge_size : (i + 1) * marge_size] for i in range(num_full)]
 
-        left = remainder // 2
-        right = remainder - left
+        sp_l = remainder // 2
+        rp_r = remainder - sp_l
         groups = []
 
         idx = 0
-        if left > 0:
-            groups.append(target_verts[: left + group_size - 1])
-            idx = left + group_size - 1
-        for _ in range(num_full - (1 if left > 0 else 0) - (1 if right > 0 else 0)):
-            groups.append(target_verts[idx : idx + group_size])
-            idx += group_size
-        if right > 0:
+        if sp_l > 0:
+            groups.append(target_verts[: sp_l + marge_size - 1])
+            idx = sp_l + marge_size - 1
+        for _ in range(num_full - (1 if sp_l > 0 else 0) - (1 if rp_r > 0 else 0)):
+            groups.append(target_verts[idx : idx + marge_size])
+            idx += marge_size
+        if rp_r > 0:
             groups.append(target_verts[idx:])
         groups = [g for g in groups if len(g) > 1]
         return groups

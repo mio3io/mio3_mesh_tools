@@ -13,6 +13,14 @@ def is_local_obj(obj):
     return obj is not None and obj.library is None and obj.override_library is None
 
 
+def is_exist_menu(cls, target_function):
+    "メニューに存在するか確認する"
+    draw_funcs = cls._dyn_ui_initialize()
+    if target_function in draw_funcs:
+        return True
+    return False
+
+
 class Mio3MTDebug:
     _start_time = 0
 
@@ -30,7 +38,7 @@ class Mio3MTDebug:
 
 
 # 一般的なオペレーター
-class Mio3MTOperator(Mio3MTDebug):
+class Mio3MTOperator(Mio3MTDebug, Operator):
     @classmethod
     def poll(cls, context):
         obj = context.active_object

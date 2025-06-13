@@ -1,15 +1,14 @@
 import bpy
+import numpy as np
 from bpy.types import Operator
-from ..utils import Mio3MTOperator
-import bmesh
 from mathutils import Vector
-from bpy.types import Operator
+from ..utils import Mio3MTOperator
 
 
-class OBJECT_OT_mio3_origin_to_selection(Mio3MTOperator, Operator):
-    bl_idname = "mesh.mio3_origin_to_selection"
+class OBJECT_OT_mio3_origin_to_active(Mio3MTOperator, Operator):
+    bl_idname = "mesh.mio3_origin_to_active"
     bl_label = "Origin → Active"
-    bl_description = "原点をアクティブ要素に移動します"
+    bl_description = "Move the origin to the active element"
     bl_options = {"REGISTER", "UNDO"}
 
     def invoke(self, context, event):
@@ -24,36 +23,42 @@ class OBJECT_OT_mio3_origin_to_selection(Mio3MTOperator, Operator):
 
     def execute(self, context):
         obj = context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
 
-        sel_verts = [v for v in bm.verts if v.select]
-        if not sel_verts:
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+        v_len = len(obj.data.vertices)
+        co = np.empty(v_len * 3, dtype=np.float32)
+        obj.data.vertices.foreach_get("co", co)
+        co = co.reshape((v_len, 3))
+
+        selected = np.array([v.select for v in obj.data.vertices])
+        if not np.any(selected):
             return {"CANCELLED"}
 
-        center = sum((v.co for v in sel_verts), Vector()) / len(sel_verts)
+        center = co[selected].mean(axis=0)
 
-        for v in bm.verts:
-            v.co -= center
-        bmesh.update_edit_mesh(obj.data, loop_triangles=False)
-
-        delta_world = obj.matrix_world.to_3x3() @ center
+        delta_world = obj.matrix_world.to_3x3() @ Vector(center)
         obj.location += delta_world
+
+        co -= center
+        obj.data.vertices.foreach_set("co", co.ravel())
         obj.data.update()
 
+        bpy.ops.object.mode_set(mode="EDIT")
         return {"FINISHED"}
 
 
 def menu(self, context):
     layout = self.layout
     layout.separator()
-    layout.operator("mesh.mio3_origin_to_selection")
+    layout.operator("mesh.mio3_origin_to_active")
 
 
 def register():
-    bpy.utils.register_class(OBJECT_OT_mio3_origin_to_selection)
+    bpy.utils.register_class(OBJECT_OT_mio3_origin_to_active)
     bpy.types.VIEW3D_MT_snap.append(menu)
 
 
 def unregister():
     bpy.types.VIEW3D_MT_snap.remove(menu)
-    bpy.utils.unregister_class(OBJECT_OT_mio3_origin_to_selection)
+    bpy.utils.unregister_class(OBJECT_OT_mio3_origin_to_active)

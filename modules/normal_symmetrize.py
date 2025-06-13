@@ -1,12 +1,11 @@
 import bpy
 import bmesh
 from mathutils import Vector, kdtree
-from bpy.types import Operator
 from bpy.props import EnumProperty
-from ..utils import find_x_mirror_verts, Mio3MTOperator
+from ..utils import Mio3MTOperator, find_x_mirror_verts
 
 
-class MESH_OT_mio3_normal_symmetrize(Mio3MTOperator, Operator):
+class MESH_OT_mio3_normal_symmetrize(Mio3MTOperator):
     bl_idname = "mesh.mio3_normal_symmetrize"
     bl_label = "Normal Symmetrize"
     bl_description = "Mirroring custom normals to symmetric vertices"
@@ -64,17 +63,17 @@ class MESH_OT_mio3_normal_symmetrize(Mio3MTOperator, Operator):
             _, idx, dist = kd.find(mirror_co)
             if dist > self._threshold:
                 continue
-            sym_v = bm.verts[idx]
+            mirror_v = bm.verts[idx]
 
             for face in v.link_faces:
-                center = get_mirror_point(face.calc_center_median())
-                if not (target_face := self.get_symmetric_face(sym_v.link_faces, center)):
+                mirror_center = get_mirror_point(face.calc_center_median())
+                if not (target_face := self.find_mirror_face(mirror_v.link_faces, mirror_center)):
                     continue
 
                 target_loops = {l.vert: l for l in target_face.loops}
                 for loop in face.loops:
-                    if loop.vert == v and sym_v in target_loops:
-                        sym_loop = target_loops[sym_v]
+                    if loop.vert == v and mirror_v in target_loops:
+                        sym_loop = target_loops[mirror_v]
                         normals[sym_loop.index] = get_mirror_normal(normals[loop.index])
 
         bm.free()
@@ -83,8 +82,8 @@ class MESH_OT_mio3_normal_symmetrize(Mio3MTOperator, Operator):
         self.print_time()
         return {"FINISHED"}
 
-    def get_symmetric_face(self, sym_faces, center):
-        return min(sym_faces, key=lambda f: (center - f.calc_center_median()).length_squared)
+    def find_mirror_face(self, mirror_faces, mirror_center):
+        return min(mirror_faces, key=lambda f: (mirror_center - f.calc_center_median()).length_squared)
 
 
 def menu(self, context):

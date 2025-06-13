@@ -7,7 +7,6 @@ from .utils import is_local_obj
 
 class MIO3_PT_mesh_tools(Panel):
     bl_label = "Mio3 Mesh Tools"
-    bl_idname = "MIO3_PT_mesh_tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Mio3"
@@ -17,13 +16,15 @@ class MIO3_PT_mesh_tools(Panel):
         obj = context.active_object
         return is_local_obj(obj) and obj.mode == "EDIT"
 
+    def draw_header_preset(self, context):
+        self.layout.menu("MIO3_MT_mesh_tools", text="", icon="DOWNARROW_HLT")
+
     def draw(self, context):
         pass
 
 
 class MIO3_PT_mesh_select(Panel):
     bl_label = "Select"
-    bl_idname = "MIO3_PT_mesh_select"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Mio3"
@@ -51,7 +52,7 @@ class MIO3_PT_mesh_select(Panel):
 
         col.separator(factor=0.5)
         split = col.split(factor=0.5, align=True)
-        split.label(text="Vector", icon="EMPTY_ARROWS")
+        split.label(text="Loop Select", icon_value=icons.select_loops)
         row = split.grid_flow(columns=3, align=True)
         row.operator("mesh.mio3_select_edge_view", text="", icon_value=icons.horizontal_edge).axis = "X"
         row.operator("mesh.mio3_select_edge_view", text="", icon_value=icons.vertical_edge).axis = "Y"
@@ -60,7 +61,6 @@ class MIO3_PT_mesh_select(Panel):
 
 class MIO3_PT_curve_edge_loop(Panel):
     bl_label = "Curve Edges"
-    bl_idname = "MIO3_PT_curve_edge_loop"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Mio3"
@@ -83,32 +83,25 @@ class MIO3_PG_curve_edge_loop(PropertyGroup):
     hide_spline: BoolProperty(name="Hide Cueve", default=False)
 
 
-class MIO3_PT_mesh_utils(Panel):
-    bl_label = "Utility"
-    bl_idname = "MIO3_PT_mesh_utils"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Mio3"
-    bl_parent_id = "MIO3_PT_mesh_tools"
-    bl_options = {"DEFAULT_CLOSED"}
+class MIO3_MT_mesh_tools(Menu):
+    bl_label = "Mesh Tools"
 
     def draw(self, context):
         layout = self.layout
-        col = layout.column(align=True)
-        col.operator("mesh.mio3_group_merg")
-        col.operator("mesh.mio3_edge_length")
-        col.separator(factor=0.5)
-        col.operator("mesh.mio3_origin_to_selection")
-        col.separator(factor=0.5)
-        col.operator("mesh.mio3_normal_symmetrize")
+        layout.operator("mesh.mio3_group_merg")
+        layout.operator("mesh.mio3_edge_length")
+        layout.separator(factor=0.5)
+        layout.operator("mesh.mio3_normal_symmetrize", icon="MOD_MIRROR")
+        layout.separator(factor=0.5)
+        layout.operator("mesh.mio3_origin_to_active", icon_value=icons.origin_to_active)
 
 
 classes = [
     MIO3_PG_curve_edge_loop,
+    MIO3_MT_mesh_tools,
     MIO3_PT_mesh_tools,
     MIO3_PT_mesh_select,
     MIO3_PT_curve_edge_loop,
-    MIO3_PT_mesh_utils,
 ]
 
 

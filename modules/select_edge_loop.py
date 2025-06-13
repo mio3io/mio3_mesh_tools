@@ -1,10 +1,9 @@
 import bpy
 import bmesh
 import math
-from bpy.types import Operator
 from collections import deque
 from bpy.props import BoolProperty, FloatProperty, EnumProperty
-from ..utils import deselect_all, get_bone_by_weight, get_bone_by_closest, Mio3MTOperator
+from ..utils import Mio3MTOperator, deselect_all, get_bone_by_weight, get_bone_by_closest
 from mathutils import kdtree, Vector
 from bpy_extras import view3d_utils
 
@@ -110,7 +109,7 @@ def mio3_select_edge_ring_less(obj):
     bmesh.update_edit_mesh(obj.data)
 
 
-class MESH_OT_mio3_select_edges(Mio3MTOperator, Operator):
+class MESH_OT_mio3_select_edges(Mio3MTOperator):
     bl_idname = "mesh.mio3_select_edges"
     bl_label = "Select Edge More/Less"
     bl_description = "Expand or reduce the selection of edge loops(rings)\n[Shift] Select All\n[Alt] Reduce by one"
@@ -150,7 +149,7 @@ class MESH_OT_mio3_select_edges(Mio3MTOperator, Operator):
         return {"FINISHED"}
 
 
-class MESH_OT_mio3_select_between(Mio3MTOperator, Operator):
+class MESH_OT_mio3_select_between(Mio3MTOperator):
     bl_idname = "mesh.mio3_select_between"
     bl_label = "Between Edge Rings"
     bl_description = "Select edge rings between selected edges"
@@ -232,7 +231,7 @@ class MESH_OT_mio3_select_between(Mio3MTOperator, Operator):
         return valid_paths
 
 
-class MESH_OT_mio3_select_edge_filter(Mio3MTOperator, Operator):
+class MESH_OT_mio3_select_edge_filter(Mio3MTOperator):
     bl_idname = "mesh.mio3_select_edge_filter"
     bl_label = "方向で選択を解除"
     bl_description = "方向でエッジループの選択を解除します"
@@ -275,7 +274,7 @@ class MESH_OT_mio3_select_edge_filter(Mio3MTOperator, Operator):
         return {"FINISHED"}
 
 
-class MESH_OT_mio3_select_edge_vector(Mio3MTOperator, Operator):
+class MESH_OT_mio3_select_edge_vector(Mio3MTOperator):
     bl_idname = "mesh.mio3_select_edge_vector"
     bl_label = "Select Edges by Vector"
     bl_description = "Select edges from the selection based on vectors of any bone"
@@ -410,7 +409,7 @@ class MESH_OT_mio3_select_edge_vector(Mio3MTOperator, Operator):
         return {"FINISHED"}
 
 
-class MESH_OT_mio3_select_edge_view(Mio3MTOperator, Operator):
+class MESH_OT_mio3_select_edge_view(Mio3MTOperator):
     bl_idname = "mesh.mio3_select_edge_view"
     bl_label = "Select Edges by View"
     bl_description = "Select edges from the selection based on view direction"

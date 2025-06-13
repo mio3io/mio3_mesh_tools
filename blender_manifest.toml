@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 id = "mio3_mesh_tools"
 name = "Mio3 Mesh Tools"
-version = "0.10.0"
+version = "0.11.0"
 tagline = "Curve Edges, and Mesh Tools"
 maintainer = "Mio"
 type = "add-on"

@@ -72,6 +72,9 @@ class MESH_OT_mio3_curve_edges_base(Operator):
     _col_point_active = (0.8, 0.8, 0.8, 1.0)
     _col_spline_default = (0.0, 0.7, 1.0, 1.0)  # デフォルトのスプライン
     _col_spline_active = (0.0, 0.7, 1.0, 1.0)  # アクティブなスプライン
+    _point_size_default = 8
+    _point_size_selected = 10
+    _point_size_active = 10
 
     _handle_3d = None
     _handle_2d = None
@@ -534,6 +537,11 @@ class MESH_OT_mio3_curve_edges_base(Operator):
             return
         spline_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         points_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+
+        p_default = self._point_size_default
+        p_selected = self._point_size_selected
+        p_active = self._point_size_active
+
         for i, spline in enumerate(self._spline_datas):
             is_active_spline = i == self._active_spline_index
             # スプラインの描画
@@ -557,7 +565,7 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                 else:
                     color = self._col_point_default
                 points_batch = batch_for_shader(points_shader, "POINTS", {"pos": [point]})
-                gpu.state.point_size_set(10 if is_active else (8 if is_selected else 6))
+                gpu.state.point_size_set(p_active if is_active else (p_selected if is_selected else p_default))
                 points_shader.bind()
                 points_shader.uniform_float("color", color)
                 points_batch.draw(points_shader)
@@ -592,11 +600,14 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         cls.remove_handler()
         obj = context.active_object
 
-        self._col_point_active = pref.col_point_active
-        self._col_point_selected = pref.col_point_selected
         self._col_point_default = pref.col_point_default
-        self._col_spline_active = pref.col_spline_active
+        self._col_point_selected = pref.col_point_selected
+        self._col_point_active = pref.col_point_active
         self._col_spline_default = pref.col_spline_default
+        self._col_spline_active = pref.col_spline_active
+        self._point_size_default = pref.point_size_default
+        self._point_size_selected = pref.point_size_selected
+        self._point_size_active = pref.point_size_active
 
         self._matrix_world = obj.matrix_world
 

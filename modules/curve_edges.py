@@ -20,6 +20,7 @@ from .curve_edges_utils import (
 )
 from ..globals import get_preferences
 
+ver4_5 = bpy.app.version >= (4, 5, 0)
 
 text_lines = [
     "🐻Tips",
@@ -535,12 +536,20 @@ class MESH_OT_mio3_curve_edges_base(Operator):
     def draw_3d(self, context, props):
         if props.hide_spline:
             return
-        spline_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
-        points_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
 
         p_default = self._point_size_default
         p_selected = self._point_size_selected
         p_active = self._point_size_active
+
+        if ver4_5:
+            spline_shader = gpu.shader.from_builtin("POLYLINE_UNIFORM_COLOR")
+            points_shader = gpu.shader.from_builtin("POINT_UNIFORM_COLOR")
+            spline_shader.uniform_float("viewportSize", gpu.state.viewport_get()[2:])
+            spline_shader.uniform_float("lineWidth", 1.0)
+        else:
+            spline_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+            points_shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+            gpu.state.line_width_set(2)
 
         for i, spline in enumerate(self._spline_datas):
             is_active_spline = i == self._active_spline_index
@@ -550,7 +559,6 @@ class MESH_OT_mio3_curve_edges_base(Operator):
                 batch = batch_for_shader(spline_shader, "LINE_LOOP", {"pos": spline["spline_points"]})
             else:
                 batch = batch_for_shader(spline_shader, "LINE_STRIP", {"pos": spline["spline_points"]})
-            gpu.state.line_width_set(2)
             spline_shader.bind()
             spline_shader.uniform_float("color", spline_color)
             batch.draw(spline_shader)
@@ -588,7 +596,10 @@ class MESH_OT_mio3_curve_edges_base(Operator):
         x1, y1 = self._drag_start_mouse
         x2, y2 = self._drag_end_mouse
         vertices = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
-        shader = gpu.shader.from_builtin("UNIFORM_COLOR")
+        if ver4_5:
+            shader = gpu.shader.from_builtin("POLYLINE_UNIFORM_COLOR")
+        else:
+            shader = gpu.shader.from_builtin("UNIFORM_COLOR")
         batch = batch_for_shader(shader, "LINE_LOOP", {"pos": vertices})
         shader.bind()
         shader.uniform_float("color", (1.0, 1.0, 1.0, 1.0))
